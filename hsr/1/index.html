@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>傷害乘區平衡計算器</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; background: #f4f4f9; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.9em; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 1em; }
+        .result-box { margin-top: 25px; padding: 15px; background: #e8f4fd; border-radius: 8px; border-left: 5px solid #3498db; }
+        .result-val { font-size: 1.4em; font-weight: bold; color: #2980b9; }
+        .info { font-size: 0.85em; color: #666; margin-top: 10px; line-height: 1.5; }
+        .highlight { color: #e67e22; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>傷害平衡計算器</h2>
+    
+    <div class="input-group">
+        <label>當前戰鬥中「歡愉度」顯示值 (%)</label>
+        <input type="number" id="joyInput" value="172" step="0.1" oninput="calculate()">
+    </div>
+
+    <div class="input-group">
+        <label>公式基礎常數 (預設 1.0)</label>
+        <input type="number" id="baseInput" value="1.0" step="0.1" oninput="calculate()">
+    </div>
+
+    <div class="result-box">
+        <div>建議目標「爆傷」應達到：</div>
+        <div class="result-val" id="targetCDMG">0 %</div>
+    </div>
+
+    <div class="info">
+        <p><strong>計算邏輯：</strong></p>
+        <ul>
+            <li>歡愉投資收益：2% / (基礎 + 歡愉%)</li>
+            <li>爆傷投資收益：5.18% / (基礎 + 爆傷%)</li>
+            <li>當兩者收益相等時，爆傷目標 = <span class="highlight">2.59 * (基礎 + 歡愉%) - 基礎</span></li>
+        </ul>
+        <p id="currentStatus"></p>
+    </div>
+</div>
+
+<script>
+    function calculate() {
+        const joy = parseFloat(document.getElementById('joyInput').value) / 100;
+        const base = parseFloat(document.getElementById('baseInput').value);
+        
+        // 平衡公式: (base + y) = 2.59 * (base + x)
+        const targetY = (2.59 * (base + joy)) - base;
+        
+        const displayY = (targetY * 100).toFixed(2);
+        document.getElementById('targetCDMG').innerText = displayY + " %";
+
+        // 動態狀態提示
+        const status = document.getElementById('currentStatus');
+        status.innerHTML = `若你目前的爆傷 <strong>低於 ${displayY}%</strong>，請優先投資爆傷。`;
+    }
+
+    // 初始化計算
+    calculate();
+</script>
+
+</body>
+</html>
