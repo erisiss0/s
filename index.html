@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阿哈配速終端 V3.0 - 物理限制版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+        :root { --neon-blue: #00f2ff; --neon-pink: #ff00e5; --neon-yellow: #f3ff00; }
+        body { background: radial-gradient(circle at center, #1a1b26 0%, #0f1016 100%); font-family: 'Noto Sans TC', sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8); }
+        .neon-border-a { border-left: 4px solid var(--neon-yellow); }
+        .neon-border-b { border-left: 4px solid var(--neon-blue); }
+        .neon-border-c { border-left: 4px solid var(--neon-pink); }
+        input[type=range] { -webkit-appearance: none; background: rgba(255, 255, 255, 0.1); height: 4px; border-radius: 2px; width: 100%; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #fff; border-radius: 2px; cursor: pointer; transform: rotate(45deg); box-shadow: 0 0 10px #fff; }
+        input[type=range]:disabled { opacity: 0.3; cursor: not-allowed; }
+        .locked-state { background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.5) !important; }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-xl w-full">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-black italic tracking-tighter text-white uppercase">AHA Speed <span class="text-indigo-500">Terminal</span></h1>
+            <div class="h-1 w-32 bg-indigo-500 mx-auto mt-2 rounded-full shadow-[0_0_15px_#6366f1]"></div>
+        </div>
+
+        <div class="space-y-4">
+            <script>
+                const renderRow = (id, colorClass, defaultRole, labelText, borderClass) => {
+                    document.write(`
+                        <div id="row-${id}" class="glass-card ${borderClass} p-5 rounded-r-xl transition-all duration-300">
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="flex items-center gap-4">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="fix-${id}" class="sr-only peer" onchange="updateUI()">
+                                        <div class="w-10 h-5 bg-gray-700 rounded-full peer peer-checked:bg-indigo-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                                        <span class="ml-2 text-[10px] font-bold text-slate-400 uppercase">鎖定</span>
+                                    </label>
+                                    <select id="role-${id}" class="bg-transparent font-bold text-lg focus:outline-none ${colorClass}" onchange="updateUI()">
+                                        <option value="銀狼" ${defaultRole==='銀狼'?'selected':''}>銀狼</option>
+                                        <option value="爻光" ${defaultRole==='爻光'?'selected':''}>爻光</option>
+                                        <option value="火花" ${defaultRole==='火花'?'selected':''}>火花</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-baseline gap-1">
+                                    <input type="number" id="num-${id}" value="150" min="100" max="300" 
+                                           class="w-16 bg-transparent text-right text-2xl font-black ${colorClass} focus:outline-none"
+                                           oninput="syncSlider('${id}')">
+                                    <span id="display-bonus-${id}" class="text-sm font-bold opacity-50"></span>
+                                </div>
+                            </div>
+                            <input type="range" id="slider-${id}" min="100" max="300" step="1" value="150" oninput="syncNum('${id}')">
+                            <div class="text-[10px] text-slate-500 mt-2 flex justify-between font-mono">
+                                <span>順序：${labelText}</span>
+                                <span id="range-${id}">範圍：100-300</span>
+                            </div>
+                        </div>
+                    `);
+                };
+                renderRow('a', 'text-yellow-400', '銀狼', '01 / 最快', 'neon-border-a');
+                renderRow('b', 'text-cyan-400', '爻光', '02 / 次快', 'neon-border-b');
+                renderRow('c', 'text-pink-400', '火花', '03 / 第三', 'neon-border-c');
+            </script>
+        </div>
+
+        <div class="mt-6 p-5 glass-card rounded-xl border-indigo-500/20">
+            <h4 class="text-[10px] text-indigo-400 tracking-widest font-bold uppercase mb-4">額外速度加成 (基礎 12%)</h4>
+            <div class="flex gap-6">
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="buff-yaoguang" class="w-4 h-4 accent-indigo-500 cursor-pointer" onchange="updateUI()">
+                    <label for="buff-yaoguang" class="text-sm font-bold text-slate-300 cursor-pointer">爻光 2星魂</label>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="buff-huohuo" class="w-4 h-4 accent-indigo-500 cursor-pointer" onchange="updateUI()">
+                    <label for="buff-huohuo" class="text-sm font-bold text-slate-300 cursor-pointer">霍霍 1星魂</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 glass-card rounded-xl p-8 flex flex-col justify-center items-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
+            <span class="text-[10px] tracking-[0.4em] text-slate-400 mb-2 uppercase font-mono">AHA SPEED RESULT (D)</span>
+            <div id="display-d" class="text-6xl font-black text-white drop-shadow-[0_0_15px_rgba(99,102,241,0.6)] font-mono">--</div>
+        </div>
+    </div>
+
+    <script>
+        const ids = ['a', 'b', 'c'];
+        const baseSpeeds = { '爻光': 101, '銀狼': 110, '火花': 107 };
+
+        function syncNum(key) {
+            const val = document.getElementById(`slider-${key}`).value;
+            document.getElementById(`num-${key}`).value = val;
+            updateUI();
+        }
+
+        function syncSlider(key) {
+            let val = parseInt(document.getElementById(`num-${key}`).value);
+            if (isNaN(val)) return;
+            val = Math.max(100, Math.min(300, val));
+            document.getElementById(`slider-${key}`).value = val;
+            updateUI();
+        }
+
+        function updateUI() {
+            let checkedIds = ids.filter(id => document.getElementById(`fix-${id}`).checked);
+            if (checkedIds.length > 2) { event.target.checked = false; checkedIds = ids.filter(id => document.getElementById(`fix-${id}`).checked); }
+
+            const buffYaoguang = document.getElementById('buff-yaoguang').checked;
+            const buffHuohuo = document.getElementById('buff-huohuo').checked;
+
+            const currentSpeeds = {};
+            const bonuses = {};
+
+            // 1. 先計算加成與基礎總速
+            ids.forEach(id => {
+                const role = document.getElementById(`role-${id}`).value;
+                const base = baseSpeeds[role];
+                let b = 0;
+                if (buffYaoguang) b += Math.round(base * 0.12);
+                if (buffHuohuo) b += Math.round(base * 0.12);
+                bonuses[id] = b;
+                document.getElementById(`display-bonus-${id}`).innerText = b > 0 ? `+${b}` : "";
+            });
+
+            // 2. 處理物理限制 (核心修正)
+            if (checkedIds.length === 2) {
+                const targetId = ids.find(id => !checkedIds.includes(id));
+                const s = document.getElementById(`slider-${targetId}`);
+                const n = document.getElementById(`num-${targetId}`);
+                
+                // 獲取已鎖定項的總速
+                const lockedSpeeds = {};
+                checkedIds.forEach(id => {
+                    lockedSpeeds[id] = parseInt(document.getElementById(`slider-${id}`).value) + bonuses[id];
+                });
+
+                let minTotal, maxTotal;
+                // 解不等式：c >= 80 + 0.2a + 0.1b + 0.05c
+                if (targetId === 'c') {
+                    const a = lockedSpeeds.a, b = lockedSpeeds.b;
+                    minTotal = Math.ceil((80 + 0.2 * a + 0.1 * b) / 0.95);
+                    maxTotal = b - 1;
+                } else if (targetId === 'b') {
+                    const a = lockedSpeeds.a, c = lockedSpeeds.c;
+                    minTotal = c + 1;
+                    maxTotal = Math.floor(Math.min(a - 1, (0.95 * c - 0.2 * a - 80) / 0.1));
+                } else { // targetId === 'a'
+                    const b = lockedSpeeds.b, c = lockedSpeeds.c;
+                    minTotal = b + 1;
+                    maxTotal = Math.floor((0.95 * c - 0.1 * b - 80) / 0.2);
+                }
+
+                const finalMin = Math.max(100, minTotal - bonuses[targetId]);
+                const finalMax = Math.min(300, maxTotal - bonuses[targetId]);
+
+                if (finalMin <= finalMax) {
+                    s.min = finalMin; s.max = finalMax;
+                    // 強制校準滑條位置
+                    if (parseInt(s.value) < finalMin) { s.value = finalMin; n.value = finalMin; }
+                    if (parseInt(s.value) > finalMax) { s.value = finalMax; n.value = finalMax; }
+                    document.getElementById(`range-${targetId}`).innerText = `建議區間：${finalMin}-${finalMax}`;
+                    document.getElementById(`range-${targetId}`).className = "text-indigo-400 font-bold";
+                } else {
+                    document.getElementById(`range-${targetId}`).innerText = "無法滿足配速條件";
+                    document.getElementById(`range-${targetId}`).className = "text-red-500 font-bold";
+                }
+            } else {
+                // 重置所有滑條範圍
+                ids.forEach(id => {
+                    const s = document.getElementById(`slider-${id}`);
+                    s.min = 100; s.max = 300;
+                    document.getElementById(`range-${id}`).innerText = "範圍：100-300";
+                    document.getElementById(`range-${id}`).className = "text-slate-500 font-mono";
+                });
+            }
+
+            // 3. 最終計算 D 並更新 UI 狀態
+            ids.forEach(id => {
+                const isFixed = document.getElementById(`fix-${id}`).checked;
+                document.getElementById(`row-${id}`).classList.toggle('locked-state', isFixed);
+                document.getElementById(`slider-${id}`).disabled = isFixed;
+                document.getElementById(`num-${id}`).disabled = isFixed;
+                currentSpeeds[id] = parseInt(document.getElementById(`slider-${id}`).value) + bonuses[id];
+            });
+
+            const d = 80 + (currentSpeeds.a * 0.2) + (currentSpeeds.b * 0.1) + (currentSpeeds.c * 0.05);
+            const dDisplay = document.getElementById('display-d');
+            dDisplay.innerText = d.toFixed(2);
+            dDisplay.className = (d > currentSpeeds.c + 0.01) ? "text-6xl font-black text-red-500 font-mono" : "text-6xl font-black text-white font-mono";
+        }
+        updateUI();
+    </script>
+</body>
+</html>
