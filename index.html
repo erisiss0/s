@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>阿哈速度計算器</title>
+  <title>阿哈時刻速度計算器</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -57,7 +57,7 @@
         </span>
       </div>
       <h1 class="text-2xl md:text-3xl font-bold tracking-wide text-slate-100 flex items-center justify-center gap-3">
-        <span>阿哈速度計算器</span>
+        <span>阿哈時刻速度計算器</span>
       </h1>
       <p class="text-xs text-slate-400 mt-1">依星神阿哈基礎速度與歡愉隊友戰鬥速度加成即時計算</p>
     </header>
@@ -69,7 +69,7 @@
         <div class="col-span-4 md:col-span-3">歡愉隊友</div>
         <div class="col-span-4 md:col-span-3">戰鬥速度</div>
         <div class="col-span-4 md:col-span-6 flex justify-between items-center">
-          <span>阿哈速度</span>
+          <span>阿哈時刻速度</span>
           <span class="text-xs text-slate-500 hidden md:inline">速度累積視覺條</span>
         </div>
       </div>
@@ -154,7 +154,7 @@
         </div>
         <div>
           <div class="text-xs uppercase tracking-wider text-amber-300 font-bold flex items-center gap-2">
-            <span>阿哈當前總速度求算成果</span>
+            <span>阿哈時刻當前總速度求算成果</span>
             <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
           </div>
           <div class="text-xs text-slate-300 mt-0.5">基礎速度加上歡愉隊友依速度降序折算成果</div>
@@ -183,13 +183,13 @@
     <section class="bg-[#1f2847] rounded-xl p-6 border border-[#2e3b62]">
       <div class="text-center mb-6">
         <h2 class="text-xl md:text-2xl font-bold tracking-wide text-slate-100">目標速度求解器</h2>
-        <p class="text-xs text-slate-400 mt-1">選取目標阿哈速度，自動倒推缺少的隊友應有速度（霍霍、不死途視為0速度不參與計算）</p>
+        <p class="text-xs text-slate-400 mt-1">選取目標阿哈時刻速度，自動倒推缺少的隊友應有速度（霍霍、不死途視為0速度不參與計算）</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
         <!-- Target Speed Selector -->
         <div>
-          <label for="targetSpeedSelect" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">目標阿哈速度</label>
+          <label for="targetSpeedSelect" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">目標阿哈時刻速度</label>
           <div class="relative">
             <select id="targetSpeedSelect" class="w-full bg-[#171d33] text-slate-100 font-semibold text-lg py-3 px-4 pr-10 rounded-xl border border-[#35436d] focus:outline-none focus:border-amber-400 transition-colors cursor-pointer appearance-none">
               <option value="174" selected>174</option>
@@ -669,7 +669,7 @@
       }
 
       formulaContainer.innerHTML = `
-        <span class="font-semibold text-slate-300">阿哈速度</span>
+        <span class="font-semibold text-slate-300">阿哈時刻速度</span>
         <span class="text-slate-400 font-bold">=</span>
         ${terms.join(' ')}
         <span class="text-slate-400 font-bold">=</span>
