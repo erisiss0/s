@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>阿哈速度計算器</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #171d33;
+      color: #e2e8f0;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #111526;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2b3658;
+      border-radius: 3px;
+    }
+    .fraction {
+      display: inline-flex;
+      flex-direction: column;
+      vertical-align: middle;
+      text-align: center;
+      padding: 0 4px;
+      line-height: 1.15;
+    }
+    .fraction > span:first-child {
+      border-bottom: 1.5px solid currentColor;
+      padding-bottom: 2px;
+    }
+    .fraction > span:last-child {
+      padding-top: 2px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8">
+
+  <!-- Main Container -->
+  <main class="max-w-4xl w-full mx-auto bg-[#1b233d] rounded-2xl shadow-2xl p-5 md:p-10 border border-[#2b3658]/60 my-auto">
+    
+    <!-- Header -->
+    <header class="text-center mb-8 relative">
+      <div class="flex justify-between items-center mb-2">
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
+          <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Honkai: Star Rail</span>
+        </div>
+        <span class="text-xs text-slate-400 bg-[#212b4b] px-2.5 py-1 rounded-full border border-[#2e3b62]">
+          歡愉命途配速模型
+        </span>
+      </div>
+      <h1 class="text-2xl md:text-3xl font-bold tracking-wide text-slate-100 flex items-center justify-center gap-3">
+        <span>阿哈速度計算器</span>
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">依星神阿哈基礎速度與歡愉隊友戰鬥速度加成即時計算</p>
+    </header>
+
+    <!-- Speed Calculation Table -->
+    <section class="space-y-4 mb-6">
+      <!-- Table Header -->
+      <div class="grid grid-cols-12 gap-3 pb-2 text-sm text-slate-400 font-medium px-2 border-b border-[#2b3658]/70">
+        <div class="col-span-4 md:col-span-3">歡愉隊友</div>
+        <div class="col-span-4 md:col-span-3">戰鬥速度</div>
+        <div class="col-span-4 md:col-span-6 flex justify-between items-center">
+          <span>阿哈速度</span>
+          <span class="text-xs text-slate-500 hidden md:inline">速度累積視覺條</span>
+        </div>
+      </div>
+
+      <!-- Row 1: 星神阿哈 (Constant / Base Speed) -->
+      <div class="grid grid-cols-12 gap-3 items-center p-2.5 rounded-xl bg-[#212b4b]/60 border border-[#2b3658]/40 hover:border-[#3d4d7c] transition-colors">
+        <div class="col-span-4 md:col-span-3 font-semibold text-slate-200 flex items-center gap-2 text-sm md:text-base">
+          <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+          <span>星神阿哈</span>
+        </div>
+        <div class="col-span-4 md:col-span-3">
+          <div class="relative">
+            <select id="ahaLightconeSelect" class="w-full bg-[#171d33] text-slate-200 text-xs md:text-sm font-medium py-2 px-3 pr-8 rounded-lg border border-[#324068] focus:outline-none focus:border-amber-400 transition-colors cursor-pointer appearance-none">
+              <option value="none">無 (基礎 80)</option>
+              <option value="lc0">光椎0 (基礎 94，+14)</option>
+              <option value="lc1">光椎1 (基礎 106，+12)</option>
+              <option value="lc2">光椎2 (基礎 108，+14)</option>
+              <option value="lc3">光椎3 (基礎 110，+16)</option>
+              <option value="lc4">光椎4 (基礎 112，+18)</option>
+              <option value="lc5">光椎5 (基礎 114，+20)</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path></svg>
+            </div>
+          </div>
+        </div>
+        <div class="col-span-4 md:col-span-6 flex items-center gap-3">
+          <div class="flex-1 h-6 bg-[#171d33]/90 rounded-md p-0.5 overflow-hidden flex relative">
+            <div id="bar-base" class="h-full bg-[#5d687c] rounded-sm transition-all duration-300"></div>
+          </div>
+          <span id="val-base" class="text-sm font-mono text-slate-300 min-w-[68px] text-right font-medium">+ 80.000</span>
+        </div>
+      </div>
+
+      <!-- Teammate Rows Container (Rows 2 to 5) -->
+      <div id="teammateRowsContainer" class="space-y-3">
+        <!-- Rendered by JavaScript: 4 teammate rows with character dropdowns -->
+      </div>
+    </section>
+
+    <!-- Eidolon Speed Buffs (星魂加速勾選項) -->
+    <section class="bg-[#212b4b]/70 rounded-xl p-4 border border-[#2e3b64] mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          星魂速度增益（依角色基礎速度 × 12% 增加至戰鬥速度）
+        </span>
+        <span class="text-[11px] text-slate-400">需隊伍中存在對應角色方可勾選</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+        <!-- 爻光二魂加速12％ -->
+        <label id="labelYaoguangE2" class="flex items-center gap-3 p-2.5 rounded-lg border border-[#324068] bg-[#171d33] transition-all cursor-pointer select-none">
+          <input type="checkbox" id="checkYaoguangE2" class="w-4 h-4 text-amber-500 rounded bg-[#212b4b] border-[#3d4d7a] focus:ring-amber-400 cursor-pointer" />
+          <div class="flex-1">
+            <div class="text-sm font-medium text-slate-200 flex items-center justify-between">
+              <span>爻光二魂加速12％</span>
+              <span id="tagYaoguangStatus" class="text-[11px] text-slate-400 font-normal">未入隊</span>
+            </div>
+            <div class="text-[11px] text-slate-400">將每位參戰角色的基礎速度 × 0.12 加入戰鬥速度</div>
+          </div>
+        </label>
+
+        <!-- 霍霍一魂加速12％ -->
+        <label id="labelHuohuoE1" class="flex items-center gap-3 p-2.5 rounded-lg border border-[#324068] bg-[#171d33] transition-all cursor-pointer select-none">
+          <input type="checkbox" id="checkHuohuoE1" class="w-4 h-4 text-emerald-500 rounded bg-[#212b4b] border-[#3d4d7a] focus:ring-emerald-400 cursor-pointer" />
+          <div class="flex-1">
+            <div class="text-sm font-medium text-slate-200 flex items-center justify-between">
+              <span>霍霍一魂加速12％</span>
+              <span id="tagHuohuoStatus" class="text-[11px] text-slate-400 font-normal">未入隊</span>
+            </div>
+            <div class="text-[11px] text-slate-400">將每位參戰角色的基礎速度 × 0.12 加入戰鬥速度</div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <!-- Prominent Aha Speed Result Card (醒目成果列) -->
+    <section class="bg-gradient-to-r from-[#19223c] via-[#233157] to-[#19223c] rounded-xl p-4 md:p-5 border-2 border-amber-400/60 shadow-xl shadow-amber-950/20 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-300 shadow-inner flex-shrink-0">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider text-amber-300 font-bold flex items-center gap-2">
+            <span>阿哈當前總速度求算成果</span>
+            <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+          </div>
+          <div class="text-xs text-slate-300 mt-0.5">基礎速度加上歡愉隊友依速度降序折算成果</div>
+        </div>
+      </div>
+      <div class="flex items-baseline gap-2 bg-[#13192b]/80 px-4 py-2 rounded-xl border border-amber-400/30">
+        <span id="ahaHeroTotalSpeed" class="text-3xl md:text-5xl font-black text-amber-300 font-mono tracking-tight drop-shadow-[0_2px_12px_rgba(251,191,36,0.35)]">
+          146.200
+        </span>
+        <span class="text-base md:text-lg font-bold text-slate-200">速度</span>
+      </div>
+    </section>
+
+    <!-- Dynamic Formula Box -->
+    <section class="bg-[#171d33] rounded-xl p-5 md:p-6 border border-[#2b3658] mb-10 overflow-x-auto">
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold">公式展開（自動依速度降序排列：1號÷5、2號÷10、3號÷20、4號÷40）</div>
+        <div class="text-[11px] text-amber-300 font-mono">自動排序為1~4號隊友</div>
+      </div>
+      <div id="formulaContainer" class="flex items-center flex-wrap gap-2 text-slate-200 text-sm md:text-base font-mono">
+        <!-- Populated dynamically by renderFormula() -->
+      </div>
+    </section>
+
+    <!-- Target Speed Solver Section -->
+    <section class="bg-[#1f2847] rounded-xl p-6 border border-[#2e3b62]">
+      <div class="text-center mb-6">
+        <h2 class="text-xl md:text-2xl font-bold tracking-wide text-slate-100">目標速度求解器</h2>
+        <p class="text-xs text-slate-400 mt-1">選取目標阿哈速度，自動倒推缺少的隊友應有速度（霍霍視為0速度不參與計算）</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <!-- Target Speed Selector -->
+        <div>
+          <label for="targetSpeedSelect" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">目標阿哈速度</label>
+          <div class="relative">
+            <select id="targetSpeedSelect" class="w-full bg-[#171d33] text-slate-100 font-semibold text-lg py-3 px-4 pr-10 rounded-xl border border-[#35436d] focus:outline-none focus:border-amber-400 transition-colors cursor-pointer appearance-none">
+              <option value="174" selected>174</option>
+              <option value="167">167</option>
+              <option value="140">140</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+          <!-- Quick Buttons for the 3 target speeds -->
+          <div class="flex gap-2 mt-3">
+            <button type="button" class="quick-target-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-[#273256] hover:bg-[#32406d] text-slate-200 border border-[#3b4b7a] transition-colors" data-target="140">140</button>
+            <button type="button" class="quick-target-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-[#273256] hover:bg-[#32406d] text-slate-200 border border-[#3b4b7a] transition-colors" data-target="167">167</button>
+            <button type="button" class="quick-target-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-[#273256] hover:bg-[#32406d] text-slate-200 border border-[#3b4b7a] transition-colors" data-target="174">174</button>
+          </div>
+        </div>
+
+        <!-- Calculated Missing Teammate Speed Output -->
+        <div class="bg-[#171d33] rounded-xl p-4 border border-[#324068] text-center md:text-left flex flex-col justify-center">
+          <div id="targetTeammateLabel" class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1 flex items-center justify-between">
+            <span>缺少隊友速度</span>
+            <span id="targetTeammateRoleBadge" class="text-[11px] px-2 py-0.5 rounded bg-[#242f52] text-amber-300 font-mono">推算中</span>
+          </div>
+          <div id="targetTeammateValue" class="text-3xl md:text-4xl font-extrabold text-white tracking-tight font-mono">
+            --
+          </div>
+          <div id="targetTeammateStatus" class="text-xs text-slate-400 mt-1">
+            請輸入隊友速度以進行倒推運算
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Base speed data provided by user
+    const CHARACTER_DATA = {
+      yaoguang:  { name: '爻光',      baseSpeed: 101, isHuoHuo: false },
+      huohua:    { name: '火花',      baseSpeed: 107, isHuoHuo: false },
+      trailblazer:{ name: '開拓者',   baseSpeed: 106, isHuoHuo: false },
+      silverwolf:{ name: '銀狼999',  baseSpeed: 110, isHuoHuo: false },
+      feiying:   { name: '緋英',      baseSpeed: 104, isHuoHuo: false },
+      aventurine:{ name: '砂金戲浪',  baseSpeed: 107, isHuoHuo: false },
+      pearl:     { name: '真珠',      baseSpeed: 99,  isHuoHuo: false },
+      aha:       { name: '星神阿哈',  baseSpeed: 80,  isHuoHuo: false, isDynamicAha: true },
+      huohuo:    { name: '霍霍',      baseSpeed: 98,  isHuoHuo: true } // Only slot 4, not participating
+    };
+
+    // Lightcone definition for top row
+    const LIGHTCONE_SPEEDS = {
+      none: { base: 80.0, label: '無 (基礎 80)', bonus: 0 },
+      lc0:  { base: 94.0, label: '光椎0 (基礎 94，+14)', bonus: 14 },
+      lc1:  { base: 106.0, label: '光椎1 (基礎 106，+12)', bonus: 26 },
+      lc2:  { base: 108.0, label: '光椎2 (基礎 108，+14)', bonus: 28 },
+      lc3:  { base: 110.0, label: '光椎3 (基礎 110，+16)', bonus: 30 },
+      lc4:  { base: 112.0, label: '光椎4 (基礎 112，+18)', bonus: 32 },
+      lc5:  { base: 114.0, label: '光椎5 (基礎 114，+20)', bonus: 34 }
+    };
+
+    // Color theme matching the screenshot
+    const ROW_THEMES = [
+      { defaultChar: 'yaoguang',   barColor: '#c89b3c', textColor: '#e6b958' }, // Gold/Yellow
+      { defaultChar: 'huohua',     barColor: '#9360c7', textColor: '#b585e8' }, // Purple
+      { defaultChar: 'pearl',      barColor: '#4f99d9', textColor: '#74b9f2' }, // Cyan/Blue
+      { defaultChar: 'huohuo',     barColor: '#2ea879', textColor: '#51cca0' }  // Emerald
+    ];
+
+    // State definition: Distinct initial characters so no duplicates exist
+    let teammateChars = ['yaoguang', 'huohua', 'pearl', 'huohuo'];
+    let teammateSpeeds = ['197', '174', '164', ''];
+    let selectedLightcone = 'none';
+    let targetSpeed = 174;
+    let yaoguangE2Checked = false;
+    let huohuoE1Checked = false;
+
+    // References to DOM elements
+    const ahaSelect = document.getElementById('ahaLightconeSelect');
+    const targetSelect = document.getElementById('targetSpeedSelect');
+    const container = document.getElementById('teammateRowsContainer');
+    const formulaContainer = document.getElementById('formulaContainer');
+    const barBase = document.getElementById('bar-base');
+    const valBase = document.getElementById('val-base');
+    const ahaHeroTotal = document.getElementById('ahaHeroTotalSpeed');
+    const checkYaoguangE2 = document.getElementById('checkYaoguangE2');
+    const checkHuohuoE1 = document.getElementById('checkHuohuoE1');
+    const labelYaoguangE2 = document.getElementById('labelYaoguangE2');
+    const labelHuohuoE1 = document.getElementById('labelHuohuoE1');
+    const tagYaoguangStatus = document.getElementById('tagYaoguangStatus');
+    const tagHuohuoStatus = document.getElementById('tagHuohuoStatus');
+    const targetLabel = document.getElementById('targetTeammateLabel');
+    const targetRoleBadge = document.getElementById('targetTeammateRoleBadge');
+    const targetVal = document.getElementById('targetTeammateValue');
+    const targetStatus = document.getElementById('targetTeammateStatus');
+    const quickTargetBtns = document.querySelectorAll('.quick-target-btn');
+
+    // Get current base speed of a character
+    function getCharBaseSpeed(charKey) {
+      if (!charKey || !CHARACTER_DATA[charKey]) return 100;
+      if (CHARACTER_DATA[charKey].isDynamicAha) {
+        return LIGHTCONE_SPEEDS[selectedLightcone] ? LIGHTCONE_SPEEDS[selectedLightcone].base : 80;
+      }
+      return CHARACTER_DATA[charKey].baseSpeed;
+    }
+
+    // Refresh character options to prevent duplicate characters across teammates
+    function updateDropdownOptions() {
+      for (let i = 0; i < 4; i++) {
+        const select = document.querySelector(`.char-select[data-index="${i}"]`);
+        if (!select) continue;
+
+        const isSlot4 = (i === 3);
+        const currentVal = teammateChars[i];
+
+        // Rebuild options with disabled states for characters chosen by others
+        let html = '';
+        for (const [key, item] of Object.entries(CHARACTER_DATA)) {
+          if (item.isHuoHuo && !isSlot4) continue; // HuoHuo only available in slot 4
+
+          const isChosenByOther = teammateChars.some((c, idx) => idx !== i && c === key);
+          const isSelected = (currentVal === key);
+          const displayBase = item.isDynamicAha ? '動態' : item.baseSpeed;
+
+          if (isChosenByOther) {
+            html += `<option value="${key}" disabled class="text-slate-600 bg-[#121624]">${item.name} (${displayBase}) (已在隊伍中)</option>`;
+          } else {
+            html += `<option value="${key}" ${isSelected ? 'selected' : ''}>${item.name} (${displayBase})</option>`;
+          }
+        }
+        select.innerHTML = html;
+        select.value = currentVal;
+      }
+    }
+
+    // Build the 4 teammate rows
+    function initTeammateRows() {
+      container.innerHTML = '';
+      for (let i = 0; i < 4; i++) {
+        const theme = ROW_THEMES[i];
+
+        const row = document.createElement('div');
+        row.id = `teammate-row-${i}`;
+        row.className = 'grid grid-cols-12 gap-3 items-center p-2.5 rounded-xl bg-[#212b4b]/60 border border-[#2b3658]/40 hover:border-[#3d4d7c] transition-colors';
+        row.innerHTML = `
+          <!-- Character Dropdown -->
+          <div class="col-span-4 md:col-span-3">
+            <div class="relative">
+              <select class="char-select w-full bg-[#171d33] text-slate-100 text-xs md:text-sm font-medium py-2 px-2.5 pr-7 rounded-lg border border-[#324068] focus:outline-none focus:border-amber-400 transition-colors cursor-pointer appearance-none" data-index="${i}">
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1 px-1">
+              <span id="rank-badge-${i}" class="font-mono text-amber-300 font-medium">--</span>
+              <span id="buff-badge-${i}" class="text-slate-400"></span>
+            </div>
+          </div>
+
+          <!-- Combat Speed Input -->
+          <div class="col-span-4 md:col-span-3">
+            <div class="relative flex items-center">
+              <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.5 15.5c-.83 0-1.5.67-1.5 1.5v1h-3.2l-2.4-3.6c-.37-.55-.98-.9-1.65-.9H7v-2h2.5c.83 0 1.5-.67 1.5-1.5S10.33 8.5 9.5 8.5H5c-.55 0-1 .45-1 1v6c0 2.21 1.79 4 4 4h11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5zM6 4.5C6 3.67 5.33 3 4.5 3S3 3.67 3 4.5 3.67 6 4.5 6 6 5.33 6 4.5zm14.7 4.3l-2.85-2.85c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41l2.14 2.14h-4.08c-.55 0-1 .45-1 1s.45 1 1 1h4.08l-2.14 2.14c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l2.85-2.85c.39-.39.39-1.02 0-1.4z"/>
+                </svg>
+              </span>
+              <input type="number" step="any" min="0" placeholder="戰鬥速度" value="${teammateSpeeds[i]}" data-index="${i}"
+                class="teammate-input w-full bg-[#171d33] text-slate-100 font-mono text-xs md:text-sm py-2 pl-8 pr-7 rounded-lg border border-[#324068] focus:outline-none focus:border-amber-400 transition-colors" />
+              <button type="button" class="clear-row-btn absolute inset-y-0 right-0 pr-2 flex items-center text-slate-500 hover:text-slate-300 transition-colors" data-index="${i}" title="清除">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            <!-- Prominent Effective Speed Display -->
+            <div id="effective-speed-desc-${i}" class="text-[11px] mt-1 px-1 font-mono truncate">
+              --
+            </div>
+          </div>
+
+          <!-- Speed Contribution Bar -->
+          <div class="col-span-4 md:col-span-6 flex items-center gap-3">
+            <div class="flex-1 h-6 bg-[#171d33]/90 rounded-md p-0.5 overflow-hidden flex relative">
+              <div id="bar-offset-${i}" class="h-full bg-transparent transition-all duration-300"></div>
+              <div id="bar-seg-${i}" class="h-full rounded-sm transition-all duration-300" style="background-color: ${theme.barColor}; width: 0%;"></div>
+            </div>
+            <span id="val-seg-${i}" class="text-sm font-mono text-slate-300 min-w-[68px] text-right font-medium">+ 0.000</span>
+          </div>
+        `;
+        container.appendChild(row);
+      }
+
+      updateDropdownOptions();
+
+      // Character dropdown event listener
+      document.querySelectorAll('.char-select').forEach(sel => {
+        sel.addEventListener('change', (e) => {
+          const idx = parseInt(e.target.dataset.index, 10);
+          teammateChars[idx] = e.target.value;
+          updateDropdownOptions();
+          updateBuffEligibility();
+          calculateAll();
+        });
+      });
+
+      // Teammate speed input event listener
+      document.querySelectorAll('.teammate-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const idx = parseInt(e.target.dataset.index, 10);
+          teammateSpeeds[idx] = e.target.value.trim();
+          calculateAll();
+        });
+      });
+
+      // Clear button listener
+      document.querySelectorAll('.clear-row-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.index, 10);
+          teammateSpeeds[idx] = '';
+          const input = document.querySelector(`.teammate-input[data-index="${idx}"]`);
+          if (input) input.value = '';
+          calculateAll();
+        });
+      });
+    }
+
+    // Check eligibility of Eidolon speed buffs
+    function updateBuffEligibility() {
+      const hasYaoguang = teammateChars.includes('yaoguang');
+      const hasHuohuo = (teammateChars[3] === 'huohuo');
+
+      // Update Yaoguang E2 checkbox state
+      if (hasYaoguang) {
+        checkYaoguangE2.disabled = false;
+        labelYaoguangE2.classList.remove('opacity-50', 'pointer-events-none');
+        tagYaoguangStatus.textContent = '可勾選';
+        tagYaoguangStatus.className = 'text-[11px] text-amber-300 font-normal';
+      } else {
+        checkYaoguangE2.checked = false;
+        yaoguangE2Checked = false;
+        checkYaoguangE2.disabled = true;
+        labelYaoguangE2.classList.add('opacity-50', 'pointer-events-none');
+        tagYaoguangStatus.textContent = '需隊伍中有爻光';
+        tagYaoguangStatus.className = 'text-[11px] text-slate-500 font-normal';
+      }
+
+      // Update Huohuo E1 checkbox state
+      if (hasHuohuo) {
+        checkHuohuoE1.disabled = false;
+        labelHuohuoE1.classList.remove('opacity-50', 'pointer-events-none');
+        tagHuohuoStatus.textContent = '可勾選';
+        tagHuohuoStatus.className = 'text-[11px] text-emerald-300 font-normal';
+      } else {
+        checkHuohuoE1.checked = false;
+        huohuoE1Checked = false;
+        checkHuohuoE1.disabled = true;
+        labelHuohuoE1.classList.add('opacity-50', 'pointer-events-none');
+        tagHuohuoStatus.textContent = '需隊友4為霍霍';
+        tagHuohuoStatus.className = 'text-[11px] text-slate-500 font-normal';
+      }
+    }
+
+    // Main calculation and rendering function
+    function calculateAll() {
+      const baseInfo = LIGHTCONE_SPEEDS[selectedLightcone] || LIGHTCONE_SPEEDS.none;
+      const ahaBaseSpeed = baseInfo.base;
+
+      // Update base speed row display
+      valBase.textContent = `+ ${ahaBaseSpeed.toFixed(3)}`;
+
+      // Calculate effective speeds and buffs for each teammate
+      const teammateItems = [];
+      for (let i = 0; i < 4; i++) {
+        const charKey = teammateChars[i];
+        const charInfo = CHARACTER_DATA[charKey] || CHARACTER_DATA.yaoguang;
+        const charBase = getCharBaseSpeed(charKey);
+        const isHuoHuo = charInfo.isHuoHuo;
+
+        const rawSpeed = parseFloat(teammateSpeeds[i]);
+        const hasInput = (!isNaN(rawSpeed) && rawSpeed > 0);
+        const inputSpeed = hasInput ? rawSpeed : 0;
+
+        // Calculate buffs from E2 Yaoguang and E1 Huohuo
+        let buffSpeed = 0;
+        let buffDesc = [];
+        if (!isHuoHuo) {
+          if (yaoguangE2Checked) {
+            const yBuff = charBase * 0.12;
+            buffSpeed += yBuff;
+            buffDesc.push(`爻光+${yBuff.toFixed(2)}`);
+          }
+          if (huohuoE1Checked) {
+            const hBuff = charBase * 0.12;
+            buffSpeed += hBuff;
+            buffDesc.push(`霍霍+${hBuff.toFixed(2)}`);
+          }
+        }
+
+        const effectiveSpeed = isHuoHuo ? 0 : (hasInput ? (inputSpeed + buffSpeed) : 0);
+
+        teammateItems.push({
+          slotIndex: i,
+          charKey,
+          charName: charInfo.name,
+          charBase,
+          isHuoHuo,
+          hasInput,
+          inputSpeed,
+          buffSpeed,
+          buffDesc: buffDesc.join(', '),
+          effectiveSpeed
+        });
+      }
+
+      // Sort participating teammates by effective speed descending:
+      // "使用者填入最高速度角色在計算時自動排序為1號隊友，次高2號，3高3號，4高4號"
+      // If HuoHuo is present, HuoHuo is 0 speed, placed last.
+      const sortedForAha = [...teammateItems].sort((a, b) => {
+        if (a.isHuoHuo && !b.isHuoHuo) return 1;
+        if (!a.isHuoHuo && b.isHuoHuo) return -1;
+        return b.effectiveSpeed - a.effectiveSpeed;
+      });
+
+      const divisors = [5, 10, 20, 40];
+      const rankMap = new Map(); // slotIndex -> { rank, divisor, contribution }
+      let totalTeammateContrib = 0;
+
+      for (let r = 0; r < 4; r++) {
+        const item = sortedForAha[r];
+        const div = divisors[r];
+        let contrib = 0;
+        if (!item.isHuoHuo && item.effectiveSpeed > 0) {
+          contrib = item.effectiveSpeed / div;
+        }
+        totalTeammateContrib += contrib;
+        rankMap.set(item.slotIndex, {
+          rank: r + 1,
+          divisor: div,
+          contribution: contrib
+        });
+      }
+
+      const totalAhaSpeed = ahaBaseSpeed + totalTeammateContrib;
+
+      // Update Prominent Hero Total Speed Display
+      if (ahaHeroTotal) {
+        ahaHeroTotal.textContent = totalAhaSpeed.toFixed(3);
+      }
+
+      // Update UI for each row
+      const maxTrack = Math.max(200, totalAhaSpeed * 1.15);
+      const basePct = (ahaBaseSpeed / maxTrack) * 100;
+      barBase.style.width = `${basePct.toFixed(2)}%`;
+
+      let currentAcc = ahaBaseSpeed;
+
+      for (let i = 0; i < 4; i++) {
+        const item = teammateItems[i];
+        const rankInfo = rankMap.get(i);
+        const rankBadge = document.getElementById(`rank-badge-${i}`);
+        const buffBadge = document.getElementById(`buff-badge-${i}`);
+        const descDiv = document.getElementById(`effective-speed-desc-${i}`);
+        const offsetDiv = document.getElementById(`bar-offset-${i}`);
+        const segDiv = document.getElementById(`bar-seg-${i}`);
+        const valSpan = document.getElementById(`val-seg-${i}`);
+
+        // Update rank and divisor badges
+        if (item.isHuoHuo) {
+          rankBadge.textContent = '不參與計算 (0)';
+          rankBadge.className = 'text-[11px] text-slate-500 font-mono';
+        } else if (item.hasInput) {
+          rankBadge.textContent = `${rankInfo.rank}號隊友 (÷${rankInfo.divisor})`;
+          rankBadge.className = 'text-[11px] text-amber-300 font-mono font-semibold';
+        } else {
+          rankBadge.textContent = '待填寫 (未參算)';
+          rankBadge.className = 'text-[11px] text-slate-500 font-mono';
+        }
+
+        // Update buff badge
+        if (item.buffSpeed > 0 && !item.isHuoHuo) {
+          buffBadge.textContent = `+${item.buffSpeed.toFixed(2)}`;
+          buffBadge.className = 'text-[11px] text-emerald-400 font-mono font-medium';
+        } else {
+          buffBadge.textContent = '';
+        }
+
+        // Prominent Effective Speed Display
+        // User requirements:
+        // 1. 劃紅線的部份的填入基礎速度加值是多餘的，移除 "(填入+...)"
+        // 2. 下方顯示實戰速度加醒目提示
+        // 3. 霍霍的部份只要寫「只提供速度增益」即可
+        if (item.isHuoHuo) {
+          descDiv.innerHTML = '<span class="text-emerald-400 font-medium tracking-wide">只提供速度增益</span>';
+        } else if (item.hasInput) {
+          descDiv.innerHTML = `
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#17223b] border border-[#30416b] shadow-sm">
+              <span class="text-slate-300 text-[10px] uppercase tracking-wider font-semibold">實戰速度:</span>
+              <span class="text-amber-300 font-bold font-mono text-xs">${item.effectiveSpeed.toFixed(3)}</span>
+            </span>
+          `;
+        } else {
+          descDiv.innerHTML = '<span class="text-slate-500 text-[11px]">未填入速度</span>';
+        }
+
+        // Update progress bar
+        const contrib = rankInfo ? rankInfo.contribution : 0;
+        const offsetPct = (currentAcc / maxTrack) * 100;
+        const widthPct = (contrib / maxTrack) * 100;
+
+        if (offsetDiv) offsetDiv.style.width = `${offsetPct.toFixed(2)}%`;
+        if (segDiv) segDiv.style.width = `${widthPct.toFixed(2)}%`;
+        if (valSpan) {
+          valSpan.textContent = contrib > 0 ? `+ ${contrib.toFixed(3)}` : '+ 0.000';
+          valSpan.style.color = contrib > 0 ? ROW_THEMES[i].textColor : '#64748b';
+        }
+
+        currentAcc += contrib;
+      }
+
+      // Render formula with sorted order
+      renderFormula(ahaBaseSpeed, sortedForAha, totalAhaSpeed);
+
+      // Solve for missing teammate speed
+      solveMissingTeammateSpeed(ahaBaseSpeed, teammateItems, targetSpeed);
+    }
+
+    // Render mathematical formula sorted by speed
+    function renderFormula(baseSpeed, sortedItems, total) {
+      const divisors = [5, 10, 20, 40];
+      let terms = [];
+
+      terms.push(`<span class="font-bold text-slate-300">${baseSpeed.toFixed(0)}</span>`);
+
+      for (let r = 0; r < 4; r++) {
+        const item = sortedItems[r];
+        const div = divisors[r];
+        const theme = ROW_THEMES[item.slotIndex] || { textColor: '#e2e8f0' };
+
+        if (!item.isHuoHuo && item.hasInput && item.effectiveSpeed > 0) {
+          terms.push(`
+            <span class="text-slate-400 font-bold">+</span>
+            <span class="inline-flex items-center" style="color: ${theme.textColor};">
+              <span class="text-slate-400 font-bold">(</span>
+              <span class="fraction font-semibold">
+                <span class="text-xs md:text-sm">${item.charName} ${item.effectiveSpeed.toFixed(3)}</span>
+                <span class="text-xs md:text-sm">${div}</span>
+              </span>
+              <span class="text-slate-400 font-bold">)</span>
+            </span>
+          `);
+        } else if (item.isHuoHuo) {
+          terms.push(`
+            <span class="text-slate-600 font-bold">+</span>
+            <span class="inline-flex items-center text-slate-600">
+              <span class="font-bold">(</span>
+              <span class="fraction">
+                <span class="text-xs md:text-sm">霍霍 0</span>
+                <span class="text-xs md:text-sm">${div}</span>
+              </span>
+              <span class="font-bold">)</span>
+            </span>
+          `);
+        } else {
+          terms.push(`
+            <span class="text-slate-500 font-bold">+</span>
+            <span class="inline-flex items-center text-slate-500">
+              <span class="font-bold">(</span>
+              <span class="fraction">
+                <span class="text-xs md:text-sm">${item.charName}<sub>${item.slotIndex+1}</sub></span>
+                <span class="text-xs md:text-sm">${div}</span>
+              </span>
+              <span class="font-bold">)</span>
+            </span>
+          `);
+        }
+      }
+
+      formulaContainer.innerHTML = `
+        <span class="font-semibold text-slate-300">阿哈速度</span>
+        <span class="text-slate-400 font-bold">=</span>
+        ${terms.join(' ')}
+        <span class="text-slate-400 font-bold">=</span>
+        <span class="text-xl md:text-2xl font-extrabold text-white ml-1 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/30 font-mono">
+          ${total.toFixed(3)}
+        </span>
+        <span class="text-slate-300 font-semibold text-sm">速度</span>
+      `;
+    }
+
+    // Target Speed Solver: dynamically find missing teammate and solve for required speed
+    function solveMissingTeammateSpeed(baseSpeed, teammateItems, target) {
+      // Find missing teammates (excluding HuoHuo who is fixed at 0 speed)
+      let missingList = [];
+      let knownCombatSpeeds = [];
+
+      for (let i = 0; i < 4; i++) {
+        const item = teammateItems[i];
+        if (item.isHuoHuo) {
+          // HuoHuo does not participate, fixed at 0
+          knownCombatSpeeds.push({ speed: 0, isHuoHuo: true });
+        } else if (!item.hasInput) {
+          missingList.push(item);
+        } else {
+          knownCombatSpeeds.push({ speed: item.effectiveSpeed, isHuoHuo: false, item });
+        }
+      }
+
+      // If all participating teammates are filled:
+      if (missingList.length === 0) {
+        targetLabel.innerHTML = `<span>缺少的隊友速度</span>`;
+        targetRoleBadge.textContent = '所有隊友已填寫';
+        targetRoleBadge.className = 'text-[11px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-mono';
+        targetVal.innerHTML = `<span class="text-emerald-400 text-2xl md:text-3xl">已全數填寫</span>`;
+        targetStatus.textContent = `當前隊伍已滿，若需倒推請清空任一隊友的戰鬥速度。`;
+        return;
+      }
+
+      // We solve for the first missing teammate in order (e.g. if 1 is missing, solve for 1)
+      const missingItem = missingList[0];
+      const slotNum = missingItem.slotIndex + 1;
+      targetLabel.innerHTML = `<span>缺少隊友：<strong class="text-slate-200">${slotNum}號隊友 (${missingItem.charName})</strong></span>`;
+      targetRoleBadge.textContent = `待求第 ${missingList.length} 位`;
+      targetRoleBadge.className = 'text-[11px] px-2 py-0.5 rounded bg-[#242f52] text-amber-300 font-mono';
+
+      // Known non-target speeds (including 0 for other missing or HuoHuo)
+      let otherSpeeds = [];
+      for (let i = 0; i < 4; i++) {
+        if (i === missingItem.slotIndex) continue;
+        const item = teammateItems[i];
+        if (item.isHuoHuo) {
+          otherSpeeds.push(0);
+        } else if (item.hasInput) {
+          otherSpeeds.push(item.effectiveSpeed);
+        } else {
+          otherSpeeds.push(0); // If another teammate is also empty, treat as 0
+        }
+      }
+
+      // Sort known speeds descending
+      otherSpeeds.sort((a, b) => b - a);
+      const k0 = otherSpeeds[0] || 0;
+      const k1 = otherSpeeds[1] || 0;
+      const k2 = otherSpeeds[2] || 0;
+
+      // Piecewise rank solver:
+      // Rank 1: S >= k0 (divisor 5)
+      const rem1 = target - (baseSpeed + k0/10 + k1/20 + k2/40);
+      const s1 = rem1 * 5;
+
+      // Rank 2: k1 <= S < k0 (divisor 10)
+      const rem2 = target - (baseSpeed + k0/5 + k1/20 + k2/40);
+      const s2 = rem2 * 10;
+
+      // Rank 3: k2 <= S < k1 (divisor 20)
+      const rem3 = target - (baseSpeed + k0/5 + k1/10 + k2/40);
+      const s3 = rem3 * 20;
+
+      // Rank 4: S < k2 (divisor 40)
+      const rem4 = target - (baseSpeed + k0/5 + k1/10 + k2/20);
+      const s4 = rem4 * 40;
+
+      let solvedCombatSpeed = 0;
+      let rankDesc = '';
+
+      if (s1 >= k0) {
+        solvedCombatSpeed = s1;
+        rankDesc = `需作為全隊第 1 速 (÷5)`;
+      } else if (s2 >= k1 && s2 < k0) {
+        solvedCombatSpeed = s2;
+        rankDesc = `需作為全隊第 2 速 (÷10)`;
+      } else if (s3 >= k2 && s3 < k1) {
+        solvedCombatSpeed = s3;
+        rankDesc = `需作為全隊第 3 速 (÷20)`;
+      } else {
+        solvedCombatSpeed = s4;
+        rankDesc = `需作為全隊第 4 速 (÷40)`;
+      }
+
+      // Calculate missing teammate's buff
+      let missingBuff = 0;
+      let buffNote = '';
+      if (yaoguangE2Checked) {
+        missingBuff += missingItem.charBase * 0.12;
+      }
+      if (huohuoE1Checked) {
+        missingBuff += missingItem.charBase * 0.12;
+      }
+      if (missingBuff > 0) {
+        buffNote = ` (含星魂加成 +${missingBuff.toFixed(2)})`;
+      }
+
+      // Panel speed (戰鬥速度欄應填入的面板值)
+      const solvedPanelSpeed = solvedCombatSpeed - missingBuff;
+
+      // User instruction:
+      // "速度求解器，如果需求的速度低於角色的基礎速度值。可直接填入已達成。"
+      if (solvedPanelSpeed <= missingItem.charBase || solvedCombatSpeed <= 0) {
+        targetVal.innerHTML = `<span class="text-emerald-400 font-extrabold">已達成</span>`;
+        targetStatus.innerHTML = `
+          <span class="text-emerald-300 font-medium">推算需求值 (${solvedPanelSpeed.toFixed(3)}) 低於角色基礎速度 (${missingItem.charBase})</span>
+          <span class="block text-slate-400 text-xs mt-0.5">${slotNum}號隊友無需額外速度即可達標</span>
+        `;
+      } else {
+        targetVal.textContent = solvedPanelSpeed.toFixed(3);
+        targetStatus.innerHTML = `
+          <span>${rankDesc} 達成目標 ${target}。</span>
+          <span class="block text-slate-300 mt-0.5">實戰速度需達 <strong>${solvedCombatSpeed.toFixed(3)}</strong>${buffNote}</span>
+        `;
+      }
+    }
+
+    // Event listeners
+    ahaSelect.addEventListener('change', (e) => {
+      selectedLightcone = e.target.value;
+      updateDropdownOptions();
+      calculateAll();
+    });
+
+    targetSelect.addEventListener('change', (e) => {
+      targetSpeed = parseFloat(e.target.value);
+      updateQuickButtons();
+      calculateAll();
+    });
+
+    quickTargetBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = parseFloat(btn.dataset.target);
+        targetSpeed = val;
+        targetSelect.value = val.toString();
+        updateQuickButtons();
+        calculateAll();
+      });
+    });
+
+    function updateQuickButtons() {
+      quickTargetBtns.forEach(btn => {
+        const val = parseFloat(btn.dataset.target);
+        if (val === targetSpeed) {
+          btn.classList.add('bg-amber-500', 'text-slate-900', 'font-bold');
+          btn.classList.remove('bg-[#273256]', 'text-slate-200');
+        } else {
+          btn.classList.remove('bg-amber-500', 'text-slate-900', 'font-bold');
+          btn.classList.add('bg-[#273256]', 'text-slate-200');
+        }
+      });
+    }
+
+    checkYaoguangE2.addEventListener('change', (e) => {
+      yaoguangE2Checked = e.target.checked;
+      calculateAll();
+    });
+
+    checkHuohuoE1.addEventListener('change', (e) => {
+      huohuoE1Checked = e.target.checked;
+      calculateAll();
+    });
+
+    // Initialize UI
+    initTeammateRows();
+    updateBuffEligibility();
+    updateQuickButtons();
+    calculateAll();
+  </script>
+</body>
+</html>
