@@ -183,7 +183,7 @@
     <section class="bg-[#1f2847] rounded-xl p-6 border border-[#2e3b62]">
       <div class="text-center mb-6">
         <h2 class="text-xl md:text-2xl font-bold tracking-wide text-slate-100">目標速度求解器</h2>
-        <p class="text-xs text-slate-400 mt-1">選取目標阿哈速度，自動倒推缺少的隊友應有速度（霍霍視為0速度不參與計算）</p>
+        <p class="text-xs text-slate-400 mt-1">選取目標阿哈速度，自動倒推缺少的隊友應有速度（霍霍、不死途視為0速度不參與計算）</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
@@ -192,7 +192,7 @@
           <label for="targetSpeedSelect" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">目標阿哈速度</label>
           <div class="relative">
             <select id="targetSpeedSelect" class="w-full bg-[#171d33] text-slate-100 font-semibold text-lg py-3 px-4 pr-10 rounded-xl border border-[#35436d] focus:outline-none focus:border-amber-400 transition-colors cursor-pointer appearance-none">
-              <option value="180" selected>180</option>
+              <option value="174" selected>174</option>
               <option value="167">167</option>
               <option value="140">140</option>
             </select>
@@ -204,7 +204,7 @@
           <div class="flex gap-2 mt-3">
             <button type="button" class="quick-target-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-[#273256] hover:bg-[#32406d] text-slate-200 border border-[#3b4b7a] transition-colors" data-target="140">140</button>
             <button type="button" class="quick-target-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-[#273256] hover:bg-[#32406d] text-slate-200 border border-[#3b4b7a] transition-colors" data-target="167">167</button>
-            <button type="button" class="quick-target-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-[#273256] hover:bg-[#32406d] text-slate-200 border border-[#3b4b7a] transition-colors" data-target="180">180</button>
+            <button type="button" class="quick-target-btn flex-1 py-1.5 text-xs font-medium rounded-lg bg-[#273256] hover:bg-[#32406d] text-slate-200 border border-[#3b4b7a] transition-colors" data-target="174">174</button>
           </div>
         </div>
 
@@ -237,7 +237,8 @@
       aventurine:{ name: '砂金戲浪',  baseSpeed: 107, isHuoHuo: false },
       pearl:     { name: '真珠',      baseSpeed: 99,  isHuoHuo: false },
       aha:       { name: '星神阿哈',  baseSpeed: 80,  isHuoHuo: false, isDynamicAha: true },
-      huohuo:    { name: '霍霍',      baseSpeed: 98,  isHuoHuo: true } // Only slot 4, not participating
+      huohuo:    { name: '霍霍',      baseSpeed: 98,  isHuoHuo: true, slot4Only: true }, // Only slot 4, not participating
+      budetu:    { name: '不死途',    baseSpeed: 0,   isHuoHuo: true } // Any slot, speed treated as 0, not participating
     };
 
     // Lightcone definition for top row
@@ -263,7 +264,7 @@
     let teammateChars = ['yaoguang', 'huohua', 'pearl', 'huohuo'];
     let teammateSpeeds = ['197', '174', '164', ''];
     let selectedLightcone = 'none';
-    let targetSpeed = 180;
+    let targetSpeed = 174;
     let yaoguangE2Checked = false;
     let huohuoE1Checked = false;
 
@@ -308,7 +309,7 @@
         // Rebuild options with disabled states for characters chosen by others
         let html = '';
         for (const [key, item] of Object.entries(CHARACTER_DATA)) {
-          if (item.isHuoHuo && !isSlot4) continue; // HuoHuo only available in slot 4
+          if (item.slot4Only && !isSlot4) continue; // HuoHuo only available in slot 4
 
           const isChosenByOther = teammateChars.some((c, idx) => idx !== i && c === key);
           const isSelected = (currentVal === key);
@@ -646,7 +647,7 @@
             <span class="inline-flex items-center text-slate-600">
               <span class="font-bold">(</span>
               <span class="fraction">
-                <span class="text-xs md:text-sm">霍霍 0</span>
+                <span class="text-xs md:text-sm">${item.charName} 0</span>
                 <span class="text-xs md:text-sm">${div}</span>
               </span>
               <span class="font-bold">)</span>
